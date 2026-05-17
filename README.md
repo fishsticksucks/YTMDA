@@ -1,7 +1,4 @@
 # YMDA — YouTube Music Desktop App
-
-Custom Electron wrapper for YouTube Music with synced lyrics + OBS overlay.
-
 ---
 
 ## Setup
@@ -59,16 +56,6 @@ ymda/
 
 ---
 
-## Next Steps / Roadmap
-
-- [ ] Discord Rich Presence integration
-- [ ] Scrobbling to Last.fm
-- [ ] Mini-player mode (compact 300×80 floating window)
-- [ ] Manual lyrics search/override
-- [ ] Custom OBS overlay themes
-- [ ] Auto-updater
-
----
 
 ## Notes
 
