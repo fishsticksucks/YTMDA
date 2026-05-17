@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YMDA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ─── Titlebar ──────────────────────────────────────────── -->
+  <div id="titlebar">
+    <div id="titlebar-left">
+      <div id="titlebar-logo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#ff4444" stroke-width="2"/>
+          <polygon points="10,8 17,12 10,16" fill="#ff4444"/>
+        </svg>
+        <span>YMDA</span>
+      </div>
+      <button class="tb-btn" id="btn-back" title="Back">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </button>
+      <div id="obs-badge" title="OBS overlay running">
+        <span class="obs-dot"></span>
+        <span id="obs-port-label">:6969</span>
+      </div>
+      <div id="lyrics-source-pill"></div>
+    </div>
+    <div id="titlebar-right">
+      <button class="tb-btn" id="btn-import-login" title="Import login from Chrome">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+      <button class="tb-btn" id="btn-lyrics" title="Toggle Lyrics">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+      </button>
+      <button class="tb-btn" id="btn-settings" title="Settings">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn win-btn" id="btn-min" title="Minimize">─</button>
+      <button class="tb-btn win-btn" id="btn-max" title="Maximize">□</button>
+      <button class="tb-btn win-btn close-btn" id="btn-close" title="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- ─── Main App ───────────────────────────────────────────── -->
+  <div id="app">
+
+    <div id="webview-container">
+      <webview
+        id="ytm-webview"
+        src="https://music.youtube.com"
+        allowpopups
+        useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      ></webview>
+
+      <!-- Login disclaimer — shown when YTM detects user is not signed in -->
+      <div id="login-banner" class="hidden">
+        <div id="login-banner-inner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <div id="login-banner-text">
+            <strong>Not signed in</strong>
+            <span>Sign in via your browser, then import your session.</span>
+          </div>
+          <button id="login-banner-open">Open in browser</button>
+          <button id="login-banner-import">Done, import</button>
+          <button id="login-banner-dismiss" title="Dismiss">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lyrics panel -->
+    <div id="lyrics-panel" class="hidden">
+      <div id="lyrics-header">
+        <div id="lyrics-meta">
+          <span id="lyrics-title">Nothing playing</span>
+          <span id="lyrics-artist"></span>
+        </div>
+        <div id="lyrics-badges">
+          <span id="lyrics-type-badge" class="hidden"></span>
+          <span id="lyrics-src-badge" class="hidden"></span>
+        </div>
+      </div>
+
+      <div id="lyrics-body">
+        <div id="lyrics-lines"></div>
+        <div id="lyrics-state-loading" class="lyrics-state hidden">
+          <div class="spinner"></div>
+          <p>Searching lyrics…</p>
+        </div>
+        <div id="lyrics-state-empty" class="lyrics-state hidden">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <p>No lyrics found</p>
+          <small>Tried all configured sources</small>
+        </div>
+        <div id="lyrics-state-idle" class="lyrics-state">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+          </svg>
+          <p>Play something on YouTube Music</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── Settings Modal ─────────────────────────────────────── -->
+  <div id="settings-overlay" class="hidden">
+    <div id="settings-modal">
+      <div id="settings-header">
+        <h2>Settings</h2>
+        <button id="settings-close" class="icon-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="settings-body">
+
+        <!-- Lyrics Sources -->
+        <section class="settings-section">
+          <div class="section-label">Lyrics Sources</div>
+          <div class="section-desc">Drag to reorder priority. Toggle to enable/disable.</div>
+          <div id="source-list">
+            <!-- populated by JS -->
+          </div>
+        </section>
+
+        <!-- Lyrics Appearance -->
+        <section class="settings-section">
+          <div class="section-label">Lyrics Font Size</div>
+          <div class="setting-row">
+            <input type="range" id="font-size-slider" min="14" max="36" step="1" />
+            <span id="font-size-value" class="setting-value">22px</span>
+          </div>
+        </section>
+
+        <!-- Accent Color -->
+        <section class="settings-section">
+          <div class="section-label">Accent Color</div>
+          <div class="setting-row">
+            <div id="color-swatches">
+              <button class="swatch" data-color="#ff4444" style="background:#ff4444"></button>
+              <button class="swatch" data-color="#4ade80" style="background:#4ade80"></button>
+              <button class="swatch" data-color="#60a5fa" style="background:#60a5fa"></button>
+              <button class="swatch" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="swatch" data-color="#a78bfa" style="background:#a78bfa"></button>
+              <button class="swatch" data-color="#fb7185" style="background:#fb7185"></button>
+              <button class="swatch" data-color="#22d3ee" style="background:#22d3ee"></button>
+              <button class="swatch" data-color="#ffffff" style="background:#ffffff"></button>
+            </div>
+            <input type="color" id="color-custom" title="Custom color" />
+          </div>
+        </section>
+
+        <!-- Discord RPC -->
+        <section class="settings-section">
+          <div class="section-label">Discord Rich Presence</div>
+          <div class="section-desc">Shows current song in your Discord status like Spotify. Needs a free Discord App ID.</div>
+          <div class="setting-row" style="margin-bottom:8px">
+            <label class="setting-label-sm">Client ID</label>
+            <input type="text" id="discord-client-id" class="setting-input" style="width:160px;font-size:11px" placeholder="1234567890" />
+            <a id="discord-dev-link" href="#" class="setting-hint" style="color:var(--accent);text-decoration:none;cursor:pointer">Get one ↗</a>
+          </div>
+          <div class="setting-row">
+            <label class="source-toggle" style="width:auto;height:auto;position:static;">
+              <input type="checkbox" id="discord-rpc-toggle" />
+              <span class="source-toggle-track" style="position:static;display:inline-block;width:34px;height:19px;vertical-align:middle;border-radius:10px;"></span>
+            </label>
+            <span class="setting-label-sm" style="min-width:0">Enable</span>
+            <span id="discord-rpc-status" class="discord-status-dot"></span>
+            <span id="discord-rpc-status-text" class="setting-hint"></span>
+          </div>
+        </section>
+
+        <!-- OBS -->
+        <section class="settings-section">
+          <div class="section-label">OBS Overlay</div>
+          <div class="setting-row">
+            <label class="setting-label-sm">Port</label>
+            <input type="number" id="obs-port-input" min="1024" max="65535" class="setting-input" />
+          </div>
+          <div class="setting-row">
+            <label class="setting-label-sm">Position</label>
+            <select id="obs-position-select" class="setting-select">
+              <option value="bottom-left">Bottom Left</option>
+              <option value="bottom-right">Bottom Right</option>
+              <option value="top-left">Top Left</option>
+              <option value="top-right">Top Right</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <button id="open-overlay-btn" class="secondary-btn">
+              Open in browser ↗
+            </button>
+            <span class="setting-hint">Add as Browser Source in OBS</span>
+          </div>
+        </section>
+
+      </div>
+
+      <div id="settings-footer">
+        <button id="settings-save" class="primary-btn">Save</button>
+        <button id="settings-cancel" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

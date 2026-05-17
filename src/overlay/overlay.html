@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>YMDA Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,600;0,800;1,600&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: transparent;
+      font-family: 'Figtree', sans-serif;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    #anchor {
+      position: absolute;
+      padding: 24px;
+      transition: all 0.4s ease;
+    }
+
+    /* Positions set by JS from /data */
+    .pos-bottom-left  { bottom: 0; left: 0; }
+    .pos-bottom-right { bottom: 0; right: 0; }
+    .pos-top-left     { top: 0; left: 0; }
+    .pos-top-right    { top: 0; right: 0; }
+
+    #widget {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(8, 8, 8, 0.85);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 12px 16px 12px 12px;
+      min-width: 280px;
+      max-width: 440px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03) inset;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    #widget.show { opacity: 1; transform: translateY(0); }
+
+    #art-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    #album-art {
+      width: 52px; height: 52px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #1a1a1a;
+      display: block;
+    }
+    #art-pulse {
+      position: absolute; inset: -3px;
+      border-radius: 13px;
+      border: 1.5px solid rgba(255,68,68,0.4);
+      animation: pulse 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50%       { opacity: 0.7; transform: scale(1.04); }
+    }
+
+    #info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+
+    #track {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    #title  { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #artist { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #lyric {
+      font-size: 12px;
+      font-weight: 600;
+      font-style: italic;
+      color: rgba(255, 210, 210, 0.88);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 16px;
+      transition: opacity 0.25s ease;
+    }
+
+    #progress-wrap {
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff4444, #ff8888);
+      border-radius: 1px;
+      transition: width 1s linear;
+    }
+
+    #badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 7px;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.15);
+      align-self: flex-end;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="anchor" class="pos-bottom-left">
+    <div id="widget">
+      <div id="art-wrap">
+        <img id="album-art" src="" alt="" />
+        <div id="art-pulse"></div>
+      </div>
+      <div id="info">
+        <div id="track">
+          <div id="title">—</div>
+          <div id="artist">—</div>
+        </div>
+        <div id="lyric"></div>
+        <div id="progress-wrap">
+          <div id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="badge">YMDA</div>
+    </div>
+  </div>
+
+  <script>
+    const widget   = document.getElementById('widget');
+    const anchor   = document.getElementById('anchor');
+    const artEl    = document.getElementById('album-art');
+    const titleEl  = document.getElementById('title');
+    const artistEl = document.getElementById('artist');
+    const lyricEl  = document.getElementById('lyric');
+    const fillEl   = document.getElementById('progress-fill');
+
+    let lastTitle = '', lastLyric = '', lastPos = '';
+
+    async function poll() {
+      try {
+        const data = await fetch('/data').then(r => r.json());
+
+        if (data.title) {
+          widget.classList.add('show');
+
+          // Position
+          if (data.overlayPosition && data.overlayPosition !== lastPos) {
+            anchor.className = `pos-${data.overlayPosition}`;
+            lastPos = data.overlayPosition;
+          }
+
+          if (data.title !== lastTitle) {
+            titleEl.textContent  = data.title;
+            artistEl.textContent = data.artist || '';
+            if (data.albumArt) artEl.src = data.albumArt;
+            lastTitle = data.title;
+          }
+
+          if (data.lyric !== lastLyric) {
+            lyricEl.style.opacity = '0';
+            setTimeout(() => {
+              lyricEl.textContent   = data.lyric || '';
+              lyricEl.style.opacity = '1';
+            }, 220);
+            lastLyric = data.lyric;
+          }
+
+          if (data.duration > 0) {
+            fillEl.style.width = Math.min((data.progress / data.duration) * 100, 100) + '%';
+          }
+        } else {
+          widget.classList.remove('show');
+        }
+      } catch (_) {}
+    }
+
+    poll();
+    setInterval(poll, 1000);
+  </script>
+</body>
+</html>
