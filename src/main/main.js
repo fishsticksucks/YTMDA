@@ -153,14 +153,14 @@ function updateDiscordActivity({ title, artist, album, albumArt, progress, durat
   const endTime = duration > 0 ? songStartTime + Math.round(duration * 1000) : undefined;
 
   const activity = {
-    details: title || 'Unknown Track',
-    state: artist ? `by ${artist}` : 'YouTube Music',
-    startTimestamp: songStartTime,
-    ...(endTime && { endTimestamp: endTime }),
-    largeImageKey: 'ytmusic_logo',      // asset name in your Discord app (fallback)
+    type: 2,                                    // 2 = Listening (shows "Listening to" instead of "Playing")
+    details: title || 'Unknown Track',          // Song title — big line
+    state: artist || 'YouTube Music',           // Artist — small line
+    startTimestamp: songStartTime,              // Elapsed time from song start
+    largeImageKey: 'ytmusic_logo',
     largeImageText: album || 'YouTube Music',
     smallImageKey: 'playing',
-    smallImageText: 'Playing on YMDA',
+    smallImageText: 'Via YMDA',
     instance: false,
     buttons: [
       { label: '▶ Open YouTube Music', url: 'https://music.youtube.com' },
@@ -524,18 +524,27 @@ ipcMain.handle('import-cookies-from-browser', async () => {
     return fs.existsSync(cookiePath) ? cookiePath : null;
   }
 
+  // Build Chrome paths for all profiles (Default, Profile 1, Profile 2, etc.)
+  function chromePaths(base) {
+    const paths = [];
+    const userDataDir = path.join(os.homedir(), 'AppData', 'Local', base);
+    if (!fs.existsSync(userDataDir)) return paths;
+    const entries = fs.readdirSync(userDataDir).filter(e =>
+      e === 'Default' || e.startsWith('Profile')
+    );
+    for (const profile of entries) {
+      paths.push(path.join(userDataDir, profile, 'Network', 'Cookies'));
+      paths.push(path.join(userDataDir, profile, 'Cookies'));
+    }
+    return paths;
+  }
+
   const sources = [
-    { name: 'Chrome', paths: [
-      path.join(os.homedir(), 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Network', 'Cookies'),
-      path.join(os.homedir(), 'AppData', 'Local', 'Google', 'Chrome', 'User Data', 'Default', 'Cookies'),
-    ]},
+    { name: 'Chrome', paths: chromePaths('Google\\Chrome\\User Data') },
+    { name: 'Chrome Beta', paths: chromePaths('Google\\Chrome Beta\\User Data') },
     { name: 'Firefox', paths: [findFirefoxCookies()].filter(Boolean), isFirefox: true },
-    { name: 'Brave', paths: [
-      path.join(os.homedir(), 'AppData', 'Local', 'BraveSoftware', 'Brave-Browser', 'User Data', 'Default', 'Network', 'Cookies'),
-    ]},
-    { name: 'Edge', paths: [
-      path.join(os.homedir(), 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data', 'Default', 'Network', 'Cookies'),
-    ]},
+    { name: 'Brave', paths: chromePaths('BraveSoftware\\Brave-Browser\\User Data') },
+    { name: 'Edge', paths: chromePaths('Microsoft\\Edge\\User Data') },
   ];
 
   let usedBrowser = null;
@@ -708,6 +717,7 @@ function createWindow() {
     width: 1280, height: 800, minWidth: 920, minHeight: 600,
     frame: false,
     show: false,
+    icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
